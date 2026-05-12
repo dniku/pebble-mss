@@ -6,6 +6,7 @@
 #include "mooncalc.h"
 #include "math.h"
 #include "effect_layer.h"
+#include "health_bitmap.h"
 
 static Window *s_main_window;
 static Layer *main_window_layer;
@@ -201,6 +202,7 @@ static int get_hex_from_picker_int(int);
 static void set_cwLayer_size(void);
 static void apply_color_profile(void);
 #ifndef PBL_PLATFORM_APLITE
+static void update_health_icon_colors(GColor color);
 static void timer_cycle_color_profile_callback(void *data);
 #endif
 
@@ -1725,6 +1727,16 @@ static void layer_update_callback_background(Layer *layer, GContext* ctx){
 #endif
 }
 
+#ifndef PBL_PLATFORM_APLITE
+static void update_health_icon_colors(GColor color) {
+	health_bitmap_set_icon_color(s_health_bitmap_steps, color);
+	health_bitmap_set_icon_color(s_health_bitmap_sleep, color);
+	if (s_health_bmp_layer) {
+		layer_mark_dirty(bitmap_layer_get_layer(s_health_bmp_layer));
+	}
+}
+#endif
+
 static void apply_color_profile(void){
 
 #include "inc_color_profiles.h"
@@ -1774,8 +1786,9 @@ static void apply_color_profile(void){
 
 #ifndef PBL_PLATFORM_APLITE
 	text_layer_set_text_color(text_layer_health, textcolor_Steps);
-	bitmap_layer_set_background_color(s_health_bmp_layer, background_color_clock);
+	bitmap_layer_set_background_color(s_health_bmp_layer, GColorClear);
 	bitmap_layer_set_compositing_mode(s_health_bmp_layer, GCompOpSet);
+	update_health_icon_colors(textcolor_Steps);
 #endif
 
 #ifndef PBL_PLATFORM_APLITE
@@ -2040,6 +2053,7 @@ static void health_handler(HealthEventType event, void *context) {
 
 		text_layer_set_text(text_layer_health, steps_str);
 		text_layer_set_text_color(text_layer_health, textcolor_Steps_actual);
+		update_health_icon_colors(textcolor_Steps_actual);
 	}
 	layer_mark_dirty(s_layer_health_up_down);
 }
@@ -2446,8 +2460,8 @@ static void main_window_load(Window *window) {
 	LoadData();
 
 #ifndef PBL_PLATFORM_APLITE
-	s_health_bitmap_sleep = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_HEALTH_SLEEP);
-	s_health_bitmap_steps = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_HEALTH_STEPS);
+	s_health_bitmap_sleep = health_bitmap_load(RESOURCE_ID_IMAGE_HEALTH_SLEEP);
+	s_health_bitmap_steps = health_bitmap_load(RESOURCE_ID_IMAGE_HEALTH_STEPS);
 #endif
 
 #ifdef PBL_PLATFORM_APLITE
