@@ -1320,25 +1320,25 @@ static void handle_battery(BatteryChargeState charge_state) {
 		int low = 10;
 	#endif
 
+	uint8_t fine = 0b11000100; // dark green
+	uint8_t warning = 0b11110100; // dark orange (GColorOrange)
+	uint8_t critical = 0b11110000; // red (GColorRed)
+	if(ColorProfile==16) {
+		if(BatteryIconColor==1) {
+			fine = GColorFromHEX(get_hex_from_picker_int(WeatherTxtColor)).argb;
+		} else if (BatteryIconColor==0) {
+			fine = GColorFromHEX(get_hex_from_picker_int(WeatherTxtColor)).argb;
+			warning = GColorFromHEX(get_hex_from_picker_int(WeatherTxtColor)).argb;
+			critical = GColorFromHEX(get_hex_from_picker_int(WeatherTxtColor)).argb;		
+		} /* BatteryIconColor==2 - We dont need to do anything here since that is the default so above values fit */
+	}
 
 	if (actual_battery_percent > normal){ //40-100% for chalk, 30-100% for others
-		if(BatteryIconColor==2) {
-			variable_color = 0b11000100; // dark green
-		} else {
-			variable_color = GColorFromHEX(get_hex_from_picker_int(WeatherTxtColor)).argb;
-		}			          
+		variable_color = fine;	          
 	} else if (actual_battery_percent > low){ //30% for chalk, 20% for others
-		if(BatteryIconColor>=1) {
-			variable_color = 0b11110100; // dark orange (GColorOrange)
-		} else {
-			variable_color = GColorFromHEX(get_hex_from_picker_int(WeatherTxtColor)).argb; 
-		}	
+		variable_color = warning;	
 	} else {
-		if(BatteryIconColor>=1) { //0-20% for chalk, 0-10% for others
-			variable_color = 0b11110000; // red (GColorRed)
-		} else {
-			variable_color = GColorFromHEX(get_hex_from_picker_int(WeatherTxtColor)).argb; 
-		}			
+		variable_color = critical;			
 	}
 
 
@@ -1349,20 +1349,20 @@ static void handle_battery(BatteryChargeState charge_state) {
 			textcolor_bat_uint8 = 0b11000000; //black
 			bkgrcolor_bat_uint8 = 0b11111111; //white
 		} else {
-			if(BatteryIconColor==2) {
-				textcolor_bat_uint8 = 0b11111111;
-			} else {
+			if(ColorProfile==16 && BatteryIconColor != 2) {
 				textcolor_bat_uint8 = GColorFromHEX(get_hex_from_picker_int(WeatherBgColor)).argb; 
+			} else {
+				textcolor_bat_uint8 = 0b11111111;
 			}
 			bkgrcolor_bat_uint8 = variable_color;
 		}
 		//On all Profiles, make battery white on red if <= 20%:
 		if (actual_battery_percent <= 20){
-			if(BatteryIconColor>=1) {
-				textcolor_bat_uint8 = 0b11111111; 
-			} else {
+			if(ColorProfile==16 && BatteryIconColor == 0) {
 				textcolor_bat_uint8 = GColorFromHEX(get_hex_from_picker_int(WeatherBgColor)).argb;
-			}	
+			} else {
+				textcolor_bat_uint8 = 0b11111111;
+			}
 			bkgrcolor_bat_uint8 = variable_color;
 		}
 
@@ -1390,22 +1390,26 @@ static void handle_battery(BatteryChargeState charge_state) {
 		GlobalInverterColor = textcolor_bat_uint8 & 0b00111111;
 		GlobalBkgColor      = bkgrcolor_bat_uint8 & 0b00111111;
 
-		if(BatteryIconColor==2) {
-			textcolor_bat       = (GColor8){.argb = textcolor_bat_uint8};
-			bkgrcolor_bat       = (GColor8){.argb = bkgrcolor_bat_uint8};
-		} else if (BatteryIconColor==1){
-			if (actual_battery_percent > 20){
-				textcolor_bat       = GColorFromHEX(get_hex_from_picker_int(WeatherTxtColor));
-				bkgrcolor_bat       = GColorFromHEX(get_hex_from_picker_int(WeatherBgColor));
-			} else {
+		if(ColorProfile==16) {
+			if(BatteryIconColor==2) {
 				textcolor_bat       = (GColor8){.argb = textcolor_bat_uint8};
 				bkgrcolor_bat       = (GColor8){.argb = bkgrcolor_bat_uint8};
+			} else if (BatteryIconColor==1){
+				if (actual_battery_percent > 20){
+					textcolor_bat       = GColorFromHEX(get_hex_from_picker_int(WeatherTxtColor));
+					bkgrcolor_bat       = GColorFromHEX(get_hex_from_picker_int(WeatherBgColor));
+				} else {
+					textcolor_bat       = (GColor8){.argb = textcolor_bat_uint8};
+					bkgrcolor_bat       = (GColor8){.argb = bkgrcolor_bat_uint8};
+				}
+			} else {
+				textcolor_bat       = GColorFromHEX(get_hex_from_picker_int(WeatherTxtColor));
+				bkgrcolor_bat       = GColorFromHEX(get_hex_from_picker_int(WeatherBgColor));
 			}
 		} else {
-			textcolor_bat       = GColorFromHEX(get_hex_from_picker_int(WeatherTxtColor));
-			bkgrcolor_bat       = GColorFromHEX(get_hex_from_picker_int(WeatherBgColor));
-		}		
-
+			textcolor_bat       = (GColor8){.argb = textcolor_bat_uint8};
+			bkgrcolor_bat       = (GColor8){.argb = bkgrcolor_bat_uint8};
+		}
 
 		/*GlobalInverterColor = 0b00000000;
 		//GlobalInverterColor = textcolor_bat_uint8 & 0b00000000;
