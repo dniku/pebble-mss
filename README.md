@@ -12,6 +12,14 @@ Modifications copyright (c) 2026
 Also licensed under GPL-3.0.
 
 -----
+Version: 1.1.2
+Published: 5/31/2026
+Release Notes:
+* Fixed pkjs issue that would crash settings from the settings page to carry over to the watch if using an original Pebble or Pebble Steel
+
+Notice: There is still an issue with the up/down arrow of sleep/steps. It might be related to a bug in the current new pebble app, since it works in the old app. It has been reported through their new app and to their github issue page.
+
+-----
 Version: 1.1.1
 Published: 5/30/2026
 Release Notes:
