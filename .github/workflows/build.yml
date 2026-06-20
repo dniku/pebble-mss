@@ -20,6 +20,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Disable Pebble SDK analytics prompt
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.pebble-sdk"
+          touch "$HOME/.pebble-sdk/NO_TRACKING"
+
       - name: Show Pebble SDK environment
         run: |
           pebble --version
