@@ -16,11 +16,14 @@ def configure(ctx):
     ctx.load('pebble_sdk')
 
 def build(ctx):
-    # Pebble SDK 4.x expects an explicit entry point for MultiJS projects.
-    # Let the SDK's JS processing step bundle the PebbleKit JS sources instead
-    # of pre-concatenating them into pebble-js-app.js.
-    js_paths = ctx.path.ant_glob(['src/pkjs/**/*.js'])
-    js_entry_file = 'src/pkjs/index.js' if js_paths else None
+    # Concatenate all our JS files (but not recursively), and only if any JS exists in the first place.
+    ctx.path.make_node('src/js/').mkdir()
+    js_paths = ctx.path.ant_glob(['src/*.js', 'src/**/*.js'])
+    if js_paths:
+        ctx(rule='cat ${SRC} > ${TGT}', source=js_paths, target='pebble-js-app.js')
+        has_js = True
+    else:
+        has_js = False
 
     ctx.load('pebble_sdk')
 
@@ -43,8 +46,6 @@ def build(ctx):
             binaries.append({'platform': p, 'app_elf': app_elf})
 
     ctx.set_group('bundle')
-    if js_entry_file:
-        ctx.pbl_bundle(binaries=binaries, js=js_paths, js_entry_file=js_entry_file)
-    else:
-        ctx.pbl_bundle(binaries=binaries, js=[])
+    ctx.pbl_bundle(binaries=binaries, js='pebble-js-app.js' if has_js else [],
+                   js_entry_file='pebble-js-app.js' if has_js else None)
 

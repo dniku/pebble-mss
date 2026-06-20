@@ -9,10 +9,6 @@ jobs:
   build:
     name: Build Pebble app
     runs-on: ubuntu-latest
-    # Rebble's Docker Hub organization publishes rebble/pebble-sdk as a Debian
-    # based Pebble SDK image. Docker Hub currently exposes this image primarily
-    # as the latest tag, so the workflow documents the trusted source here rather
-    # than performing an unpinned manual install from third-party URLs.
     container:
       image: rebble/pebble-sdk:latest
 
@@ -40,27 +36,8 @@ jobs:
           fi
           printf 'y\n' | pebble sdk install "$SDK_CORE_ARCHIVE"
 
-      - name: Show Pebble SDK environment
-        run: |
-          pebble --version
-          pebble sdk list || true
-
       - name: Build PBW
         run: pebble build
-
-      - name: Locate PBW artifact
-        id: pbw
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s globstar nullglob
-          pbws=(build/**/*.pbw)
-          if (( ${#pbws[@]} == 0 )); then
-            echo "No .pbw files found under build/" >&2
-            exit 1
-          fi
-          printf 'Found PBW artifacts:\n'
-          printf '  %s\n' "${pbws[@]}"
 
       - name: Upload PBW artifact
         uses: actions/upload-artifact@v4
