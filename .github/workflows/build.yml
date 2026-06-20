@@ -26,6 +26,20 @@ jobs:
           mkdir -p "$HOME/.pebble-sdk"
           touch "$HOME/.pebble-sdk/NO_TRACKING"
 
+      - name: Install Pebble SDK core
+        shell: bash
+        env:
+          SDK_CORE_URL: https://github.com/aveao/PebbleArchive/raw/master/SDKCores/sdk-core-4.3.tar.bz2
+          SDK_CORE_ARCHIVE: /tmp/sdk-core-4.3.tar.bz2
+        run: |
+          set -euo pipefail
+          if command -v curl >/dev/null 2>&1; then
+            curl --fail --location --retry 3 --output "$SDK_CORE_ARCHIVE" "$SDK_CORE_URL"
+          else
+            wget --tries=3 --output-document "$SDK_CORE_ARCHIVE" "$SDK_CORE_URL"
+          fi
+          yes | pebble sdk install "$SDK_CORE_ARCHIVE"
+
       - name: Show Pebble SDK environment
         run: |
           pebble --version
