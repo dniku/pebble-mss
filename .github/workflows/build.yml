@@ -38,7 +38,7 @@ jobs:
           else
             wget --tries=3 --output-document "$SDK_CORE_ARCHIVE" "$SDK_CORE_URL"
           fi
-          yes | pebble sdk install "$SDK_CORE_ARCHIVE"
+          printf 'y\n' | pebble sdk install "$SDK_CORE_ARCHIVE"
 
       - name: Show Pebble SDK environment
         run: |
