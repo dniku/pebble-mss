@@ -14,6 +14,8 @@ def options(ctx):
 
 def configure(ctx):
     ctx.load('pebble_sdk')
+    if hasattr(ctx, 'pbl_suppress_newer_gcc_warnings'):
+        ctx.pbl_suppress_newer_gcc_warnings()
 
 def build(ctx):
     js_paths = ctx.path.ant_glob(['src/pkjs/**/*.js'])
