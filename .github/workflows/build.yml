@@ -14,6 +14,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
+      - name: Validate package metadata and files
+        run: npm run validate:package && npm run validate:files
+
       - name: Install Pebble SDK dependencies
         run: |
           sudo apt-get update
@@ -41,7 +44,7 @@ jobs:
           pebble sdk list
 
       - name: Build PBW
-        run: pebble build
+        run: npm run build
 
       - name: Upload PBW artifact
         uses: actions/upload-artifact@v6
