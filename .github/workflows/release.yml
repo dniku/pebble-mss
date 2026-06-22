@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Validate tag matches package version
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          package_version="$(node -p "require('./package.json').version")"
+          expected_tag="v${package_version}"
+
+          if [[ "${tag}" != "${expected_tag}" ]]; then
+            echo "Pushed tag '${tag}' does not match package.json version '${package_version}' (expected '${expected_tag}')." >&2
+            exit 1
+          fi
+
+      - name: Install Pebble SDK dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip python3-venv nodejs npm libsdl1.2debian libfdt1 curl ca-certificates
+
+      - name: Disable Pebble SDK analytics prompt
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.pebble-sdk"
+          touch "$HOME/.pebble-sdk/NO_TRACKING"
+
+      - name: Install Pebble CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+          uv tool install pebble-tool --python 3.13
+          pebble --version
+
+      - name: Install latest Pebble SDK
+        run: |
+          pebble sdk install latest
+          pebble sdk list
+
+      - name: Build PBW
+        run: pebble build
+
+      - name: Locate PBW artifact
+        id: pbw
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t pbw_files < <(find build -type f -name '*.pbw' | sort)
+
+          if [[ "${#pbw_files[@]}" -eq 0 ]]; then
+            echo "No .pbw artifact found under build/." >&2
+            exit 1
+          fi
+
+          if [[ "${#pbw_files[@]}" -gt 1 ]]; then
+            printf 'Found multiple .pbw artifacts:\n' >&2
+            printf ' - %s\n' "${pbw_files[@]}" >&2
+            exit 1
+          fi
+
+          echo "path=${pbw_files[0]}" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "${pbw_files[0]}")" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes "Release ${GITHUB_REF_NAME}"
+
+      - name: Upload PBW release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${GITHUB_REF_NAME}" "${{ steps.pbw.outputs.path }}#${{ steps.pbw.outputs.name }}" --clobber
