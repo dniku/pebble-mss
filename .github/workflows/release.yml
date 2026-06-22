@@ -30,6 +30,9 @@ jobs:
             exit 1
           fi
 
+      - name: Validate package metadata and files
+        run: npm run validate:package && npm run validate:files
+
       - name: Install Pebble SDK dependencies
         run: |
           sudo apt-get update
@@ -57,7 +60,7 @@ jobs:
           pebble sdk list
 
       - name: Build PBW
-        run: pebble build
+        run: npm run build
 
       - name: Locate PBW artifact
         id: pbw
