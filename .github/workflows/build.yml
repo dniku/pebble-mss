@@ -1,0 +1,51 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Pebble app
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install Pebble SDK dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip python3-venv nodejs npm libsdl1.2debian libfdt1 curl ca-certificates
+
+      - name: Disable Pebble SDK analytics prompt
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.pebble-sdk"
+          touch "$HOME/.pebble-sdk/NO_TRACKING"
+
+      - name: Install Pebble CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+          uv tool install pebble-tool --python 3.13
+          pebble --version
+
+      - name: Install latest Pebble SDK
+        run: |
+          pebble sdk install latest
+          pebble sdk list
+
+      - name: Build PBW
+        run: pebble build
+
+      - name: Upload PBW artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: pebble-pbw
+          path: build/**/*.pbw
+          if-no-files-found: error
