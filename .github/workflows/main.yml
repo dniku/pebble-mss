@@ -24,17 +24,11 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
-      - name: install pebble
-        run: uv tool install pebble-tool
+      - uses: cachix/install-nix-action@v31
       - name: install sdk
-        run: pebble sdk install 4.5
+        run: HOME="${{ runner.temp }}/pebble-home" nix develop --command pebble sdk install 4.5
       - name: make
-        run: pebble build
+        run: HOME="${{ runner.temp }}/pebble-home" nix develop --command pebble build
       - name: Upload PBW
         uses: actions/upload-artifact@v7
         with:
