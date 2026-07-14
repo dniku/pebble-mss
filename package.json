@@ -1,15 +1,15 @@
 {
-    "author": "djda9l",
+    "author": "dniku",
     "dependencies": {},
     "keywords": [],
-    "name": "m7sr_wf_1",
+    "name": "m7sr_wf_1_uv",
     "pebble": {
         "capabilities": [
             "location",
             "configurable",
             "health"
         ],
-        "displayName": "Multifunctional 7 Segment Reborn",
+        "displayName": "M7S Reborn UV",
         "enableMultiJS": true,
         "messageKeys": {
             "KEY_SET_TOPBARBG_COLOR": 60, 
@@ -189,7 +189,7 @@
             "diorite",
             "emery"
         ],
-        "uuid": "34c2f43a-81c9-4031-ac03-897f445d7eea",
+        "uuid": "97ecfd85-4a94-4878-a269-4593643b1063",
         "watchapp": {
             "watchface": true
         }
