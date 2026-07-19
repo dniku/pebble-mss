@@ -11,6 +11,8 @@ This repository:
 Modifications copyright (c) 2026
 Also licensed under GPL-3.0.
 
+UV index data is provided by [Current UV Index](https://currentuvindex.com/api) under CC BY 4.0.
+
 -----
 Version: 1.2.0
 Published: 6/24/2026

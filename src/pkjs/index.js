@@ -275,6 +275,60 @@ var xhrRequest = function (url, type, callback) {
     xhr.send();
 };
 
+function fetchUvIndex(lat, lon, callback) {
+    var url = "https://currentuvindex.com/api/v1/uvi?latitude=" +
+        encodeURIComponent(lat) + "&longitude=" + encodeURIComponent(lon);
+
+    var done = false;
+    function finish(uvIndex) {
+        if (done) return;
+        done = true;
+        clearTimeout(timeout);
+        callback(uvIndex);
+    }
+    function fail(message) {
+        if (!done) console.log(message);
+        finish("UV --");
+    }
+    var timeout = setTimeout(function() {
+        fail("timeout requesting UV index data");
+    }, 8000);
+
+    var xhr = new XMLHttpRequest();
+    xhr.onload = function () {
+        if (done) return;
+        try {
+            var data = JSON.parse(this.responseText);
+            if (data.ok === true && data.now && typeof data.now.uvi === "number") {
+                finish("UV " + (Math.round(data.now.uvi * 10) / 10));
+                return;
+            }
+        } catch (e) {
+            console.log("could not parse returned text of UV index data: " + e);
+        }
+        finish("UV --");
+    };
+    xhr.onerror = function () {
+        fail("error requesting UV index data");
+    };
+    xhr.ontimeout = function () {
+        fail("timeout requesting UV index data");
+    };
+
+    try {
+        xhr.open("GET", url);
+        xhr.timeout = 8000;
+        xhr.send();
+    } catch (e) {
+        fail("could not request UV index data: " + e);
+    }
+}
+
+function usesUvIndex(conf) {
+    return conf.weatherLine1 == 6 || conf.weatherLine2 == 6 ||
+        conf.weatherLine3 == 6 || conf.weatherLine4 == 6;
+}
+
 function locationSuccess(pos, weatherConfiguration) {
     console.log("locationSuccess Begin");
     //TODO: save loc:
@@ -500,6 +554,7 @@ function SendToPebble(pos, use_default, weatherConfiguration) {
 
 
 
+                                      function sendWeatherInfo(uvIndex) {
                                       var weather_Line_1 = "";
                                       var weather_Line_2 = "";
                                       var weather_Line_3 = "";
@@ -531,6 +586,9 @@ function SendToPebble(pos, use_default, weatherConfiguration) {
                                                   }
                                               }
                                               break;
+                                          case 6:
+                                              weather_Line_1 = uvIndex;
+                                              break;
                                       }
                                       console.log("weather_Line_1 = " + (weather_Line_1.replace('°', ' ')).replace('°', ' '));
 
@@ -559,6 +617,9 @@ function SendToPebble(pos, use_default, weatherConfiguration) {
                                                       weather_Line_2 = Math.round((Forecast.TempMax-273.15)) + "°/" + Math.round((Forecast.TempMin-273.15)) + "°C";
                                                   }
                                               }
+                                              break;
+                                          case 6:
+                                              weather_Line_2 = uvIndex;
                                               break;
                                       }
                                       console.log("weather_Line_2 = " + (weather_Line_2.replace('°', ' ')).replace('°', ' '));
@@ -589,6 +650,9 @@ function SendToPebble(pos, use_default, weatherConfiguration) {
                                                   }
                                               }
                                               break;
+                                          case 6:
+                                              weather_Line_3 = uvIndex;
+                                              break;
                                       }
                                       console.log("weather_Line_3 = " + (weather_Line_3.replace('°', ' ')).replace('°', ' '));
 
@@ -617,6 +681,9 @@ function SendToPebble(pos, use_default, weatherConfiguration) {
                                                       weather_Line_4 = Math.round((Forecast.TempMax-273.15)) + "°/" + Math.round((Forecast.TempMin-273.15)) + "°C";
                                                   }
                                               }
+                                              break;
+                                          case 6:
+                                              weather_Line_4 = uvIndex;
                                               break;
                                       }
                                       console.log("weather_Line_4 = " + (weather_Line_4.replace('°', ' ')).replace('°', ' '));
@@ -657,17 +724,27 @@ function SendToPebble(pos, use_default, weatherConfiguration) {
                               "KEY_WARN_LOCATION": warn_location
                                       };
 
-                                      // Send to Pebble
+                                      function sendWeatherDictionary() {
+                                          console.log("Sending Weather Info to Pebble ...");
+                                          Pebble.sendAppMessage(dictionary,
+                                                                function(e) {
+                                                                    console.log("Weather info sent to Pebble successfully!");
+                                                                },
+                                                                function(e) {
+                                                                    console.log("Error sending weather info to Pebble!");
+                                                                }
+                                          );
+                                      }
+                                      sendWeatherDictionary();
+                                      }
 
-                                      console.log("Sending Weather Info to Pebble ...");
-                                      Pebble.sendAppMessage(dictionary,
-                                                            function(e) {
-                                                                console.log("Weather info sent to Pebble successfully!");
-                                                            },
-                                                            function(e) {
-                                                                console.log("Error sending weather info to Pebble!");
-                                                            }
-                                      );
+                                      if (usesUvIndex(conf)) {
+                                          fetchUvIndex(WeatherDataJSON.coord.lat, WeatherDataJSON.coord.lon, function(fetchedUvIndex) {
+                                              sendWeatherInfo(fetchedUvIndex);
+                                          });
+                                      } else {
+                                          sendWeatherInfo("UV --");
+                                      }
 
         
                                   } else { //end: if (!WeatherDataJSON_error)
