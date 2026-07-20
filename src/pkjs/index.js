@@ -279,11 +279,15 @@ function fetchUvIndex(lat, lon, callback) {
     var url = "https://currentuvindex.com/api/v1/uvi?latitude=" +
         encodeURIComponent(lat) + "&longitude=" + encodeURIComponent(lon);
 
+    var xhr = new XMLHttpRequest();
     var done = false;
     function finish(uvIndex) {
         if (done) return;
         done = true;
         clearTimeout(timeout);
+        if (xhr.readyState !== XMLHttpRequest.DONE) {
+            xhr.abort();
+        }
         callback(uvIndex);
     }
     function fail(message) {
@@ -294,7 +298,6 @@ function fetchUvIndex(lat, lon, callback) {
         fail("timeout requesting UV index data");
     }, 8000);
 
-    var xhr = new XMLHttpRequest();
     xhr.onload = function () {
         if (done) return;
         try {
@@ -325,8 +328,8 @@ function fetchUvIndex(lat, lon, callback) {
 }
 
 function usesUvIndex(conf) {
-    return conf.weatherLine1 == 6 || conf.weatherLine2 == 6 ||
-        conf.weatherLine3 == 6 || conf.weatherLine4 == 6;
+    return conf.weatherLine1 === 6 || conf.weatherLine2 === 6 ||
+        conf.weatherLine3 === 6 || conf.weatherLine4 === 6;
 }
 
 function locationSuccess(pos, weatherConfiguration) {
